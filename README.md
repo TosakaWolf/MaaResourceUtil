@@ -26,6 +26,11 @@ cloud189:
 
 ## 启动
 
-#### 服务端：[start_server.go](server%2Fcmd%2Fstart_server.go)
+①下载release的文件，windows使用cmd运行
 
-#### 客户端：[start_client.go](client%2Fcmd%2Fstart_client.go)
+
+②源码方式：
+
+服务端：[start_server.go](server%2Fcmd%2Fstart_server.go)
+
+客户端：[start_client.go](client%2Fcmd%2Fstart_client.go)
