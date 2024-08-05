@@ -19,7 +19,7 @@ var FileId string
 func UploadResource() {
 	panClient := cloud_189.GetPanClient()
 	// 创建或清空 tmp 目录
-	tmpDir := "./tmp"
+	tmpDir := "./tmpDownloadDir"
 	err := os.RemoveAll(tmpDir)
 	defer os.RemoveAll(tmpDir) // 解压完成后清理 tmp 文件夹
 	if err != nil {
@@ -116,7 +116,7 @@ func UploadResource() {
 		return
 	}
 	FileId = commitRes.Id
-
+	logger.Info("文件上传完成")
 }
 
 func GetDownloadUrl() string {

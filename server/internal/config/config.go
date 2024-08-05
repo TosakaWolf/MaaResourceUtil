@@ -30,10 +30,12 @@ func init() {
 		}
 		err := utils.WriteConfig(configFilePath, defaultConfig)
 		if err != nil {
-			fmt.Printf("Failed to create config file: %v\n", err)
+			fmt.Printf("创建配置文件失败: %v\n", err)
 			return
 		}
-		fmt.Println("Created default config file:", configFilePath)
+		fmt.Println("已经自动创建配置文件:", configFilePath)
+		fmt.Println("请修改配置文件")
+		os.Exit(1)
 	}
 
 	// 读取配置文件

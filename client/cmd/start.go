@@ -2,83 +2,92 @@ package main
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
+	"maaResFetch/client/internal/config_client"
+	"maaResFetch/common/dto"
+	"maaResFetch/common/logger"
 	"maaResFetch/common/utils"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// Config 结构用于存储目录配置信息
-type Config struct {
-	Directory       string   `yaml:"directory"` // maa目录路径
-	GetResourceUrls []string `yaml:"getResourceUrls"`
-	ZipUrls         []string `yaml:"zipUrls"` // 待下载的zip文件URL列表
+func main() {
+	resourceDownload()
 }
 
-func main() {
+func resourceDownload() {
 	// 创建或清空 tmp 目录
-	tmpDir := "./tmp"
+	tmpDir := "./tmpDownloadDir"
 	err := os.RemoveAll(tmpDir)
 	defer os.RemoveAll(tmpDir) // 解压完成后清理 tmp 文件夹
 	if err != nil {
-		fmt.Printf("Failed to remove tmp directory: %v\n", err)
+		fmt.Printf("移除临时下载目录失败: %v\n", err)
 		return
 	}
 	err = os.MkdirAll(tmpDir, 0755)
 	if err != nil {
-		fmt.Printf("Failed to create tmp directory: %v\n", err)
+		fmt.Printf("创建临时下载目录失败: %v\n", err)
 		return
 	}
-
-	// 配置文件路径
-	configFilePath := "config-client.yaml"
-
-	// 如果配置文件不存在，则创建一个默认的配置
-	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
-		defaultConfig := Config{
-			Directory: "./maa_example", // 默认下载目录
-			ZipUrls: []string{
-				"https://github.com/MaaAssistantArknights/MaaResource/archive/refs/heads/main.zip",
-			}, // 默认下载的 zip URLs
+	var downloadUrls []string
+	downloadUrls = append(config_client.Config.ZipUrls, downloadUrls...)
+	if len(config_client.Config.GetResourceUrls) > 0 {
+		for _, url := range config_client.Config.GetResourceUrls {
+			resourceUrl := getResourceUrl(url)
+			if resourceUrl != "" {
+				downloadUrls = append([]string{resourceUrl}, downloadUrls...)
+			}
 		}
-		err := utils.WriteConfig(configFilePath, defaultConfig)
-		if err != nil {
-			fmt.Printf("Failed to create config file: %v\n", err)
-			return
-		}
-		fmt.Println("Created default config file:", configFilePath)
 	}
-
-	// 读取配置文件
-	config := Config{}
-	err = utils.ReadConfig(configFilePath, &config)
-	if err != nil {
-		fmt.Printf("Failed to read config file: %v\n", err)
-		return
-	}
-
 	// 下载并解压文件
-	err = downloadAndExtractFromUrls(config.ZipUrls, tmpDir, config.Directory)
+	err = downloadAndExtractFromUrl(downloadUrls, tmpDir, config_client.Config.Directory)
 	if err != nil {
-		fmt.Printf("Failed to download and extract: %v\n", err)
+		fmt.Printf("下载并解压资源文件失败: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Downloaded and extracted to: %s\n", config.Directory)
+	fmt.Printf("已经下载并解压资源文件到: %s\n", config_client.Config.Directory)
 }
 
-// downloadAndExtractFromUrls 下载并解压来自多个URL的zip文件到指定目录
-func downloadAndExtractFromUrls(urls []string, tmpDir string, outputDir string) error {
+func getResourceUrl(url string) string {
+	request, err := http.NewRequest("GET", url, nil)
+	// 发送 HTTP 请求
+	client := &http.Client{}
+	resp, err := client.Do(request)
+	if err != nil {
+		logger.Errorf("从服务端获取资源下载路径失败:%s", err.Error())
+		return ""
+	}
+	defer resp.Body.Close()
+
+	// Print the response.
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	var apiRes dto.ApiResult
+	err = json.Unmarshal(body, &apiRes)
+	if err != nil {
+		return ""
+	}
+	return apiRes.Data.(string)
+}
+
+// downloadAndExtractFromUrl 下载并解压zip文件到指定目录
+func downloadAndExtractFromUrl(urls []string, tmpDir string, outputDir string) error {
 	var lastError error
 
 	for _, url := range urls {
+		logger.Infof("使用下载链接：%s" + url)
 		zipFilePath := filepath.Join(tmpDir, "MaaResource-main.zip")
 
 		err := utils.DownloadFile(url, zipFilePath)
 		if err != nil {
-			fmt.Printf("Failed to download from %s: %v\n", url, err)
+			fmt.Printf("下载失败 %s: %v\n", url, err)
 			lastError = err
 			continue // 尝试下一个URL
 		}
@@ -86,7 +95,7 @@ func downloadAndExtractFromUrls(urls []string, tmpDir string, outputDir string) 
 		// 解压下载的 zip 文件
 		err = extractZip(zipFilePath, outputDir)
 		if err != nil {
-			fmt.Printf("Failed to extract from %s: %v\n", url, err)
+			fmt.Printf("解压失败 %s: %v\n", url, err)
 			lastError = err
 			continue // 尝试下一个URL
 		}
