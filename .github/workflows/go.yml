@@ -26,7 +26,10 @@ jobs:
       run: go get -v ./client/...
       
     - name: Build Client
-      run: go build -o client_start -v ./client/cmd/start_client.go
+      run: go build -o client_start_linux -v ./client/cmd/start_client.go
+
+    - name: Build Client for Windows
+      run: GOOS=windows GOARCH=amd64 go build -o client_start_win_amd64.exe -v ./client/cmd/start_client.go
 
     - name: Archive Client Artifact
       uses: actions/upload-artifact@v2
@@ -50,6 +53,9 @@ jobs:
       
     - name: Build Server
       run: go build -o server_start -v ./server/cmd/start_server.go
+
+    - name: Build Server for Windows
+      run: GOOS=windows GOARCH=amd64 go build -o server_start_win_amd64.exe -v ./server/cmd/start_server.go
 
     - name: Archive Server Artifact
       uses: actions/upload-artifact@v2
