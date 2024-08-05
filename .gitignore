@@ -25,3 +25,8 @@ go.sum
 # env file
 .env
 .idea/
+
+
+.maa_example/
+config-client.yaml
+config-server.yaml
