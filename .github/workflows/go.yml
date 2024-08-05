@@ -7,6 +7,13 @@ on:
   pull_request:
     branches:
       - main
+  # 定义一个额外的事件，用于 README 更新
+  workflow_dispatch:
+  # 定义一个额外的事件，用于排除 README 更新
+  workflow_run:
+    workflows: ["README Update"]
+    types:
+      - completed
 
 jobs:
 
