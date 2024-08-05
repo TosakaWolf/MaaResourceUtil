@@ -25,18 +25,22 @@ jobs:
       run: go get -v ./client/...
 
     - name: Build Client for Linux
-      run: go build -o client_start_linux -v ./client/cmd/start_client.go
+      run: go build -ldflags="-s -w" -o client_start_linux -v ./client/cmd/start_client.go
 
-    - name: Build Client for Windows
-      run: GOOS=windows GOARCH=amd64 go build -o client_start_win_amd64.exe -v ./client/cmd/start_client.go
-
-    - name: Archive Client Artifacts
+    - name: Archive Client Artifact for Linux
       uses: actions/upload-artifact@v2
       with:
-        name: client-artifact
-        path: |
-          client_start_linux
-          client_start_win_amd64.exe
+        name: client-artifact-linux
+        path: client_start_linux
+
+    - name: Build Client for Windows
+      run: GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o client_start_win_amd64.exe -v ./client/cmd/start_client.go
+
+    - name: Archive Client Artifact for Windows
+      uses: actions/upload-artifact@v2
+      with:
+        name: client-artifact-windows
+        path: client_start_win_amd64.exe
 
   build_server:
     runs-on: ubuntu-latest
@@ -53,15 +57,19 @@ jobs:
       run: go get -v ./server/...
 
     - name: Build Server for Linux
-      run: go build -o server_start_linux -v ./server/cmd/start_server.go
+      run: go build -ldflags="-s -w" -o server_start_linux -v ./server/cmd/start_server.go
 
-    - name: Build Server for Windows
-      run: GOOS=windows GOARCH=amd64 go build -o server_start_win_amd64.exe -v ./server/cmd/start_server.go
-
-    - name: Archive Server Artifacts
+    - name: Archive Server Artifact for Linux
       uses: actions/upload-artifact@v2
       with:
-        name: server-artifact
-        path: |
-          server_start_linux
-          server_start_win_amd64.exe
+        name: server-artifact-linux
+        path: server_start_linux
+
+    - name: Build Server for Windows
+      run: GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o server_start_win_amd64.exe -v ./server/cmd/start_server.go
+
+    - name: Archive Server Artifact for Windows
+      uses: actions/upload-artifact@v2
+      with:
+        name: server-artifact-windows
+        path: server_start_win_amd64.exe
