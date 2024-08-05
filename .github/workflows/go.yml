@@ -21,7 +21,10 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
-
+        
+    - name: Get Client Dependencies
+      run: go get -v ./client/...
+      
     - name: Build Client
       run: go build -o client_start -v ./client/cmd/start_client.go
 
@@ -41,7 +44,10 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
-
+        
+    - name: Get Server Dependencies
+      run: go get -v ./server/...
+      
     - name: Build Server
       run: go build -o server_start -v ./server/cmd/start_server.go
 
