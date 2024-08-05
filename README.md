@@ -22,3 +22,10 @@ cloud189:
   password: "" #天翼云盘密码
 
 ```
+
+
+## 启动
+
+#### 服务端：[start_server.go](server%2Fcmd%2Fstart_server.go)
+
+#### 客户端：[start_client.go](client%2Fcmd%2Fstart_client.go)
