@@ -37,8 +37,8 @@ func init() {
 	}
 
 	// 读取配置文件
-	config := ServerConfig{}
-	err := utils.ReadConfig(configFilePath, &config)
+	Config = ServerConfig{}
+	err := utils.ReadConfig(configFilePath, &Config)
 	if err != nil {
 		fmt.Printf("Failed to read config file: %v\n", err)
 		return

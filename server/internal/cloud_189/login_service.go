@@ -47,14 +47,12 @@ func Login() *cloudpan.PanClient {
 		logger.Error("189 appTokenFlag false")
 		return nil
 	}
-	//sskAccessTokenExpiresIn := AppToken.SskAccessTokenExpiresIn
-	//sskAkExpireTime := time.UnixMilli(sskAccessTokenExpiresIn)
-	//logger.Info("189 ssk AK 过期时间:" + sskAkExpireTime.Format("2006-01-02 15:04:05"))
 	webToken := &cloudpan.WebLoginToken{}
 	webTokenStr := GetWebTokenStr()
 	if webTokenStr != "" {
 		webToken.CookieLoginUser = webTokenStr
 	} else {
+		logger.Error("webToken为空")
 		return nil
 	}
 	// pan client
@@ -76,7 +74,7 @@ func GetWebTokenStr() string {
 func GetPanClient() *cloudpan.PanClient {
 	if PanClient == nil {
 		if PanClient == nil {
-			tryTimes := 1
+			tryTimes := 0
 			initializeClient(&tryTimes)
 		}
 	}
@@ -93,7 +91,7 @@ func initializeClient(tryTimes *int) {
 			initializeClient(tryTimes)
 		}
 		if *tryTimes == 3 {
-			logger.Error("189 client 初始化失败")
+			logger.Panic("189 client 初始化失败")
 		}
 	}
 }

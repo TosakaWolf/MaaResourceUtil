@@ -9,5 +9,5 @@ func InitRouter(e *echo.Echo) {
 	initBotRoutes(e.Group("/maa"))
 }
 func initBotRoutes(g *echo.Group) {
-	g.GET("/resource", api.GetResource)
+	g.GET("/getResource", api.GetResource)
 }

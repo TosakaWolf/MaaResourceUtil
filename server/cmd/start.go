@@ -6,6 +6,7 @@ import (
 	"golang.org/x/net/http2"
 	"maaResFetch/server/internal/config"
 	"maaResFetch/server/internal/server"
+	"maaResFetch/server/pkg/service/file_service"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 func main() {
 
 	e, c := server.New()
+	go file_service.UploadResource()
 	// Start server
 	go func() {
 		if err := e.StartH2CServer(":"+strconv.Itoa(config.Config.Port), &http2.Server{}); err != nil && !errors.Is(err, http.ErrServerClosed) {

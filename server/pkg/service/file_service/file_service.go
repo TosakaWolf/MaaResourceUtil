@@ -17,6 +17,7 @@ import (
 var FileId string
 
 func UploadResource() {
+	panClient := cloud_189.GetPanClient()
 	// 创建或清空 tmp 目录
 	tmpDir := "./tmp"
 	err := os.RemoveAll(tmpDir)
@@ -59,15 +60,15 @@ func UploadResource() {
 	param.Size = fileSize
 	param.LastWrite = formattedTime
 	param.Md5 = md5sum
-	res, err := cloud_189.PanClient.AppCreateUploadFile(&param)
-	if err != nil {
-		logger.Error(err.Error())
+	res, apiErr := panClient.AppCreateUploadFile(&param)
+	if apiErr != nil {
+		logger.Error(apiErr.Error())
 		return
 	}
 	var fileRange cloudpan.AppFileUploadRange
 	fileRange.Offset = 0
 	fileRange.Len = fileSize
-	cloud_189.PanClient.AppUploadFileData(res.FileUploadUrl, res.UploadFileId, res.XRequestId, &fileRange,
+	panClient.AppUploadFileData(res.FileUploadUrl, res.UploadFileId, res.XRequestId, &fileRange,
 		func(httpMethod, fullUrl string, headers map[string]string) (resp *http.Response, err error) {
 			// 创建 HTTP 请求
 			req, err := http.NewRequest(httpMethod, fullUrl, nil)
@@ -109,16 +110,22 @@ func UploadResource() {
 			// 返回响应结果
 			return resp, nil
 		})
-	commitRes, commitErr := cloud_189.PanClient.AppUploadFileCommitOverwrite(res.FileCommitUrl, res.UploadFileId, res.XRequestId, true)
+	commitRes, commitErr := panClient.AppUploadFileCommitOverwrite(res.FileCommitUrl, res.UploadFileId, res.XRequestId, true)
 	if commitErr != nil {
-		logger.Error(commitErr.Error())
+		logger.Errorf("文件上传失败：%s", commitErr.Error())
+		return
 	}
 	FileId = commitRes.Id
 
 }
 
 func GetDownloadUrl() string {
-	urlRes, urlerr := cloud_189.PanClient.AppGetFileDownloadUrl(FileId)
+	panClient := cloud_189.GetPanClient()
+	if FileId == "" {
+		logger.Error("文件未上传，返回空")
+		return ""
+	}
+	urlRes, urlerr := panClient.AppGetFileDownloadUrl(FileId)
 	if urlerr != nil {
 		logger.Error(urlerr.Error())
 	}
