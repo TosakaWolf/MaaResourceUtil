@@ -27,6 +27,6 @@ go.sum
 .idea/
 
 
-.maa_example/
+maa_example/
 config-client.yaml
 config-server.yaml
