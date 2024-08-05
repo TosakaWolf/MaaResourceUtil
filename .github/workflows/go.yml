@@ -1,13 +1,12 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go
+name: Build Client and Server
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
 
@@ -21,21 +20,23 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
-        
+
     - name: Get Client Dependencies
       run: go get -v ./client/...
-      
-    - name: Build Client
+
+    - name: Build Client for Linux
       run: go build -o client_start_linux -v ./client/cmd/start_client.go
 
     - name: Build Client for Windows
       run: GOOS=windows GOARCH=amd64 go build -o client_start_win_amd64.exe -v ./client/cmd/start_client.go
 
-    - name: Archive Client Artifact
+    - name: Archive Client Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: client-artifact
-        path: client_start
+        path: |
+          client_start_linux
+          client_start_win_amd64.exe
 
   build_server:
     runs-on: ubuntu-latest
@@ -47,18 +48,20 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
-        
+
     - name: Get Server Dependencies
       run: go get -v ./server/...
-      
-    - name: Build Server
-      run: go build -o server_start -v ./server/cmd/start_server.go
+
+    - name: Build Server for Linux
+      run: go build -o server_start_linux -v ./server/cmd/start_server.go
 
     - name: Build Server for Windows
       run: GOOS=windows GOARCH=amd64 go build -o server_start_win_amd64.exe -v ./server/cmd/start_server.go
 
-    - name: Archive Server Artifact
+    - name: Archive Server Artifacts
       uses: actions/upload-artifact@v2
       with:
         name: server-artifact
-        path: server_start
+        path: |
+          server_start_linux
+          server_start_win_amd64.exe
