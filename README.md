@@ -2,7 +2,11 @@
 
 用网盘（天翼云）api下载[MaaResource](https://github.com/MaaAssistantArknights/MaaResource)
 
+/maa/getResource的服务端请求路径现在是固定的，本地服务端测试使用[http://127.0.0.1:8080/maa/getResource](http://127.0.0.1:8080/maa/getResource)
+
+
 ## 客户端配置文件
+
 ```yaml
 
 directory: D:\Program Files\MAA-v5.3.1-win-x64 #这是maa的路径
@@ -31,6 +35,15 @@ cloud189:
 
 ②源码方式：
 
+go mod vender
+
 服务端：[start_server.go](server%2Fcmd%2Fstart_server.go)
 
 客户端：[start_client.go](client%2Fcmd%2Fstart_client.go)
+
+
+## 需要注意的问题
+
+切换网络环境时，appToken.json登录缓存不可复用。
+
+rate limit默认不启用
