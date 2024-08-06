@@ -12,9 +12,18 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 var FileId string
+var (
+	downloadUrlCache   string
+	downloadUrlExpires time.Time
+	cacheMutex         sync.Mutex
+)
 
 func UploadResource() {
 	panClient := cloud_189.GetPanClient()
@@ -32,7 +41,7 @@ func UploadResource() {
 		return
 	}
 	zipFilePath := filepath.Join(tmpDir, "MaaResource-main.zip")
-
+	logger.Info("从github下载MaaResource资源文件")
 	err = utils.DownloadFile(config.Config.ZipUrl, zipFilePath)
 	if err != nil {
 		fmt.Printf("Failed to download from %s: %v\n", config.Config.ZipUrl, err)
@@ -68,6 +77,7 @@ func UploadResource() {
 	var fileRange cloudpan.AppFileUploadRange
 	fileRange.Offset = 0
 	fileRange.Len = fileSize
+	logger.Info("上传MaaResource资源文件")
 	panClient.AppUploadFileData(res.FileUploadUrl, res.UploadFileId, res.XRequestId, &fileRange,
 		func(httpMethod, fullUrl string, headers map[string]string) (resp *http.Response, err error) {
 			// 创建 HTTP 请求
@@ -116,10 +126,16 @@ func UploadResource() {
 		return
 	}
 	FileId = commitRes.Id
-	logger.Info("文件上传完成")
+	logger.Info("MaaResource资源文件上传完成")
 }
-
 func GetDownloadUrl() string {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	if downloadUrlExpires.After(time.Now()) {
+		return downloadUrlCache
+	}
+
 	panClient := cloud_189.GetPanClient()
 	if FileId == "" {
 		logger.Error("文件未上传，返回空")
@@ -128,6 +144,40 @@ func GetDownloadUrl() string {
 	urlRes, urlerr := panClient.AppGetFileDownloadUrl(FileId)
 	if urlerr != nil {
 		logger.Error(urlerr.Error())
+		return ""
 	}
-	return urlRes
+
+	expirationTime, err := parseExpirationTimeFromURL(urlRes)
+	if err != nil {
+		logger.Error(err.Error())
+		return ""
+	}
+	logger.Infof("获取到新的下载链接：过期时间：%s", expirationTime.String())
+	downloadUrlExpires = expirationTime.Add(-10 * time.Second)
+	downloadUrlCache = urlRes
+
+	return downloadUrlCache
+}
+
+func parseExpirationTimeFromURL(urlRes string) (time.Time, error) {
+	// Example: https://download.cloud.189.cn/file/downloadFile.action?dt=n&expired=1722910619703&sk=xxx...
+	expiredParam := "expired="
+	expirationStart := strings.Index(urlRes, expiredParam)
+	if expirationStart == -1 {
+		return time.Time{}, fmt.Errorf("在url没有找到过期时间")
+	}
+	expirationStart += len(expiredParam)
+	expirationEnd := strings.Index(urlRes[expirationStart:], "&")
+	if expirationEnd == -1 {
+		expirationEnd = len(urlRes)
+	}
+	expirationString := urlRes[expirationStart : expirationStart+expirationEnd]
+
+	expirationUnix, err := strconv.ParseInt(expirationString, 10, 64)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("格式化过期时间错误: %v", err)
+	}
+
+	expirationTime := time.Unix(expirationUnix/1000, 0)
+	return expirationTime, nil
 }
