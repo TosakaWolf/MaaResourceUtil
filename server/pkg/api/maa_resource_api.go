@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/labstack/echo/v4"
-	"maaResFetch/common/dto"
-	"maaResFetch/server/pkg/service/file_service"
+	"maaResourceUtil/common/dto"
+	"maaResourceUtil/server/pkg/service/file_service"
 	"net/http"
 )
 

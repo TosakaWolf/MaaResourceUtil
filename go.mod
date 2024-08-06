@@ -1,4 +1,4 @@
-module maaResFetch
+module maaResourceUtil
 
 go 1.22
 

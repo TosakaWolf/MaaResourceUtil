@@ -7,8 +7,8 @@ import (
 
 	"github.com/tickstep/cloudpan189-api/cloudpan"
 	"go.uber.org/zap"
-	"maaResFetch/common/logger"
-	"maaResFetch/server/internal/config"
+	"maaResourceUtil/common/logger"
+	"maaResourceUtil/server/internal/config"
 )
 
 var AppToken cloudpan.AppLoginToken

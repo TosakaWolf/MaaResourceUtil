@@ -2,7 +2,7 @@ package config_client
 
 import (
 	"fmt"
-	"maaResFetch/common/utils"
+	"maaResourceUtil/common/utils"
 	"os"
 )
 

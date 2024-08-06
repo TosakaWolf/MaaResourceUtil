@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"maaResFetch/common/utils"
+	"maaResourceUtil/common/utils"
 	"os"
 )
 

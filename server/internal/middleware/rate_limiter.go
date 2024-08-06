@@ -4,8 +4,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
-	"maaResFetch/common/dto"
-	"maaResFetch/common/logger"
+	"maaResourceUtil/common/dto"
+	"maaResourceUtil/common/logger"
 	"net/http"
 	"time"
 )

@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
-	"maaResFetch/server/pkg/api"
+	"maaResourceUtil/server/pkg/api"
 )
 
 func InitRouter(e *echo.Echo) {
