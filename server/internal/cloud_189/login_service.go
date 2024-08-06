@@ -53,7 +53,6 @@ func Login() *cloudpan.PanClient {
 		webToken.CookieLoginUser = webTokenStr
 	} else {
 		logger.Error("webToken为空")
-		return nil
 	}
 	// pan client
 	panClient := cloudpan.NewPanClient(*webToken, AppToken)
