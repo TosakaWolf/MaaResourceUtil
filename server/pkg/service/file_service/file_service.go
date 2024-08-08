@@ -26,6 +26,9 @@ var (
 var fileIdFileName = "fileId.json"
 
 func init() {
+	if !config.Config.Cloud189.Enabled {
+		return
+	}
 	uploadQueue = make(chan struct{}, 1) // 使用缓冲大小为1的通道作为任务队列
 	// 启动任务处理
 	go processUploadQueue()

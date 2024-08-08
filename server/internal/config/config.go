@@ -6,18 +6,21 @@ import (
 	"os"
 )
 
-// ServerConfig 服务端配置文件
-type ServerConfig struct {
-	Port       int    `yaml:"port"` // maa目录路径
-	ZipUrl     string `yaml:"zipUrl"`
-	CommitsUrl string `yaml:"commitsUrl"`
-	Cloud189   struct {
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-	} `yaml:"cloud189"`
+// serverConfig 服务端配置文件
+type serverConfig struct {
+	Port       int            `yaml:"port"` // maa目录路径
+	ZipUrl     string         `yaml:"zipUrl"`
+	CommitsUrl string         `yaml:"commitsUrl"`
+	Cloud189   cloud189Config `yaml:"cloud189"`
 }
 
-var Config ServerConfig
+type cloud189Config struct {
+	Enabled  bool   `yaml:"enabled"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
+var Config serverConfig
 
 func init() {
 	// 配置文件路径
@@ -25,10 +28,15 @@ func init() {
 
 	// 如果配置文件不存在，则创建一个默认的配置
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {
-		defaultConfig := ServerConfig{
+		defaultConfig := serverConfig{
 			Port:       8080,
 			ZipUrl:     "https://github.com/MaaAssistantArknights/MaaResource/archive/refs/heads/main.zip",
 			CommitsUrl: "https://github.com/MaaAssistantArknights/MaaResource/commits",
+			Cloud189: cloud189Config{
+				Enabled:  true,
+				Username: "",
+				Password: "",
+			},
 		}
 		err := utils.WriteConfig(configFilePath, defaultConfig)
 		if err != nil {
@@ -41,7 +49,7 @@ func init() {
 	}
 
 	// 读取配置文件
-	Config = ServerConfig{}
+	Config = serverConfig{}
 	err := utils.ReadConfig(configFilePath, &Config)
 	if err != nil {
 		fmt.Printf("Failed to read config file: %v\n", err)
