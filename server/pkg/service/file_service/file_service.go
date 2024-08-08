@@ -9,21 +9,58 @@ import (
 	"maaResourceUtil/common/utils"
 	"maaResourceUtil/server/internal/cloud_189"
 	"maaResourceUtil/server/internal/config"
+	"maaResourceUtil/server/pkg/service/git_service"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
 var FileId string
+
 var (
-	downloadUrlCache   string
-	downloadUrlExpires time.Time
-	cacheMutex         sync.Mutex
+	uploadQueue chan struct{}
+	uploadMutex sync.Mutex
 )
+var fileIdFileName = "fileId.json"
+
+func init() {
+	uploadQueue = make(chan struct{}, 1) // 使用缓冲大小为1的通道作为任务队列
+	// 启动任务处理
+	go processUploadQueue()
+	// 程序启动时从文件中加载 FileId
+	loadFileIdFromFile()
+
+	if FileId == "" {
+		uploadQueue <- struct{}{}
+	}
+
+	// 每隔十分钟检查一次
+	ticker := time.NewTicker(1 * time.Minute)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				changed := git_service.CheckAndStoreLatestCommit()
+				if changed {
+					// 加入任务队列
+					uploadQueue <- struct{}{}
+				}
+			}
+		}
+	}()
+
+}
+
+func processUploadQueue() {
+	for range uploadQueue {
+		// 加锁等待资源更新完成
+		uploadMutex.Lock()
+		UploadResource()
+		uploadMutex.Unlock()
+	}
+}
 
 func UploadResource() {
 	panClient := cloud_189.GetPanClient()
@@ -127,57 +164,45 @@ func UploadResource() {
 	}
 	FileId = commitRes.Id
 	logger.Info("MaaResource资源文件上传完成")
-}
-func GetDownloadUrl() string {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
 
-	if downloadUrlExpires.After(time.Now()) {
-		return downloadUrlCache
-	}
-
-	panClient := cloud_189.GetPanClient()
-	if FileId == "" {
-		logger.Error("文件未上传，返回空")
-		return ""
-	}
-	urlRes, urlerr := panClient.AppGetFileDownloadUrl(FileId)
-	if urlerr != nil {
-		logger.Error(urlerr.Error())
-		return ""
-	}
-
-	expirationTime, err := parseExpirationTimeFromURL(urlRes)
-	if err != nil {
-		logger.Error(err.Error())
-		return ""
-	}
-	logger.Infof("获取到新的下载链接：过期时间：%s", expirationTime.String())
-	downloadUrlExpires = expirationTime.Add(-10 * time.Second)
-	downloadUrlCache = urlRes
-
-	return downloadUrlCache
+	// 保存 FileId 到文件中
+	saveFileIdToFile()
 }
 
-func parseExpirationTimeFromURL(urlRes string) (time.Time, error) {
-	// Example: https://download.cloud.189.cn/file/downloadFile.action?dt=n&expired=1722910619703&sk=xxx...
-	expiredParam := "expired="
-	expirationStart := strings.Index(urlRes, expiredParam)
-	if expirationStart == -1 {
-		return time.Time{}, fmt.Errorf("在url没有找到过期时间")
-	}
-	expirationStart += len(expiredParam)
-	expirationEnd := strings.Index(urlRes[expirationStart:], "&")
-	if expirationEnd == -1 {
-		expirationEnd = len(urlRes)
-	}
-	expirationString := urlRes[expirationStart : expirationStart+expirationEnd]
-
-	expirationUnix, err := strconv.ParseInt(expirationString, 10, 64)
+func saveFileIdToFile() {
+	file, err := os.Create(fileIdFileName)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("格式化过期时间错误: %v", err)
+		logger.Errorf("无法创建文件 %s: %v", fileIdFileName, err)
+		return
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(FileId)
+	if err != nil {
+		logger.Errorf("无法写入文件 %s: %v", fileIdFileName, err)
+		return
 	}
 
-	expirationTime := time.Unix(expirationUnix/1000, 0)
-	return expirationTime, nil
+	logger.Infof("FileId 已保存到文件 %s", fileIdFileName)
+}
+
+func loadFileIdFromFile() {
+	// 尝试从文件中加载 FileId
+	file, err := os.Open(fileIdFileName)
+	if err != nil {
+		//logger.Warnf("文件不存在 %s: %v", fileIdFileName, err)
+		return
+	}
+	defer file.Close()
+
+	// 读取 FileId
+	var id string
+	_, err = fmt.Fscanf(file, "%s", &id)
+	if err != nil {
+		logger.Errorf("无法从文件 %s 中读取 FileId: %v", fileIdFileName, err)
+		return
+	}
+
+	FileId = id
+	logger.Infof("成功从文件 %s 中加载 FileId: %s", fileIdFileName, FileId)
 }
