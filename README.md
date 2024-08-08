@@ -21,6 +21,7 @@ zipUrls:
 ```yaml
 port: 8080 #服务端端口
 zipUrl: https://github.com/MaaAssistantArknights/MaaResource/archive/refs/heads/main.zip #一般情况下不需要修改，默认的maa resource github路径
+commitsUrl: https://api.github.com/repos/MaaAssistantArknights/MaaResource/commits #一般情况下不需要修改，默认的maa git commits路径
 cloud189:
   username: "" #天翼云盘用户名
   password: "" #天翼云盘密码
