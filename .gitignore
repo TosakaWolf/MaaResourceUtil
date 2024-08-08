@@ -31,3 +31,5 @@ maa_example/
 config-client.yaml
 config-server.yaml
 appToken.json
+fileId.json
+latestCommit.json
